@@ -1,5 +1,7 @@
 # Simple Togglable Terminal
 
+![demo](sttdemo.gif)
+
 This pluggin aims to add a basic togglable terminal to vim, to make it more "IDE
 like".
 
