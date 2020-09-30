@@ -1,52 +1,55 @@
-" stt.vim - Simple Togglable Terminal 
+" stt.vim - Simple Togglable Terminal
 " Author: Cássio Ávila (AKA toniz4)
-" Version: 0.2
-" TODO: Hide terminal buffer, not delete it
+" Version: 0.3
+" TODO: Hide terminal based on name
+" TODO: Better auto commands
 
 if exists("g:stt_auto_insert")
 else
-	 let g:stt_auto_insert = 1
+	 let g:stt_auto_insert = 0
 endif
 
-let t:term_exists = 0
-
 augroup stt
-	autocmd!
-	autocmd WinEnter term://* let t:is_term_win = 1 
+	autocmd BufEnter term://* startinsert | if g:stt_auto_insert == 1 |
+				\ let t:term_exists = 1 | endif
+	autocmd WinEnter term://* let t:is_term_win = 1
 	autocmd WinLeave term://* let t:is_term_win = 0
-	autocmd bufenter * if (winnr("$") == 1 && t:term_exists == 1 && t:is_term_win == 1) | q | endif
-	autocmd BufDelete term://* let t:term_exists = 0 | unlet t:term_win_num | unlet t:term_visible
-	if g:stt_auto_insert == 1
-		autocmd BufEnter term://* startinsert
-	endif
+	"Quit when the only window is a terminal window
+	autocmd bufenter * if (winnr("$") == 1 && exists('t:term_exists')
+		\ && t:is_term_win == 1) | q | endif
 augroup END
 
-function TermInit() 
-	let t:term_visible = 1
-	let t:term_exists = 1
+function ToggleTerm()
+	if !exists('s:termbufnum')
+		call OpenTerm()
+	else
+		for l:buf in getbufinfo({'buflisted':1})
+			let l:win = get(getwininfo(get(l:buf.windows, 0)), 0)
+
+			if !l:buf.hidden
+				if l:win.terminal
+					let s:termbufnum = l:buf.bufnr
+					execute l:win.winnr . 'hide'
+				endif
+			else
+				if s:termbufnum == l:buf.bufnr
+					execute 'sbuffer' . l:buf.bufnr | res 9
+				endif
+			endif
+		endfor
+	endif
+endfunction
+
+function OpenTerm()
 	setlocal splitbelow
 	9sp | term
+	setlocal number&
+	setlocal relativenumber&
 	if g:stt_auto_insert == 1
 		startinsert
 	endif
-	setlocal number&
-	setlocal relativenumber&
-	let t:term_win_num = bufnr('term://*')
+	let s:termbufnum = bufnr("$")
 endfunction
 
-function Term()
-	if (exists('t:term_visible') && exists('t:term_win_num'))
-		let t:term_win_num = bufnr('term://*')
-		if t:term_visible == 1
-			execute t:term_win_num . ' hide'
-			let t:term_visible = 0
-		else
-			let t:term_visible = 1
-			execute 'sbuffer' . t:term_win_num | res 9
-		endif
-	else
-		call TermInit()
-	endif
-endfunction
-
-command ToggleTerm call Term()
+command ToggleTerm call ToggleTerm()
+command OpenTerm call OpenTerm()
