@@ -2,21 +2,21 @@
 " Author: Cássio Ávila (AKA toniz4)
 " Version: 0.3
 " TODO: Hide terminal based on name
-" TODO: Better auto commands
+" TODO: Better vim support
 
-if exists("g:stt_auto_insert")
-else
+if !exists('g:stt_auto_insert')
 	 let g:stt_auto_insert = 0
 endif
 
+if !exists('g:stt_auto_quit')
+	let g:stt_auto_quit = 0
+endif
+
 augroup stt
-	autocmd BufEnter term://* startinsert | if g:stt_auto_insert == 1 |
-				\ let t:term_exists = 1 | endif
-	autocmd WinEnter term://* let t:is_term_win = 1
-	autocmd WinLeave term://* let t:is_term_win = 0
-	"Quit when the only window is a terminal window
-	autocmd bufenter * if (winnr("$") == 1 && exists('t:term_exists')
-		\ && t:is_term_win == 1) | q | endif
+	autocmd BufEnter stt-term if g:stt_auto_insert == 1 | startinsert | endif
+	autocmd BufEnter * if (g:stt_auto_quit == 1 && winnr("$") == 1
+				\ && exists('s:termbufnum')
+				\ && get(getwininfo(win_getid()),0).terminal) | q | endif
 augroup END
 
 function ToggleTerm()
@@ -42,14 +42,20 @@ endfunction
 
 function OpenTerm()
 	setlocal splitbelow
-	9sp | term
+	if has('nvim')
+		9sp | terminal
+	elseif has('terminal')
+		terminal ++close
+		res 9
+	endif
 	setlocal number&
 	setlocal relativenumber&
+	setlocal nomodified&
 	if g:stt_auto_insert == 1
 		startinsert
 	endif
+	file stt-term
 	let s:termbufnum = bufnr("$")
 endfunction
 
 command ToggleTerm call ToggleTerm()
-command OpenTerm call OpenTerm()
