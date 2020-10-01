@@ -12,12 +12,16 @@ if !exists('g:stt_auto_quit')
 	let g:stt_auto_quit = 0
 endif
 
-augroup stt
-	autocmd BufEnter stt-term if g:stt_auto_insert == 1 | startinsert | endif
-	autocmd BufEnter * if (g:stt_auto_quit == 1 && winnr("$") == 1
-				\ && exists('s:termbufnum')
-				\ && get(getwininfo(win_getid()),0).terminal) | q | endif
-augroup END
+if !exists('auloaded')
+	let auloaded = 1
+	augroup stt
+		autocmd BufEnter stt-term if g:stt_auto_insert == 1 | startinsert | endif
+		autocmd BufEnter * if (g:stt_auto_quit == 1 && winnr("$") == 1
+					\ && exists('s:termbufnum')
+					\ && get(getwininfo(win_getid()),0).terminal) | q | endif
+		autocmd BufDelete stt-term unlet s:termbufnum
+	augroup END
+endif
 
 function ToggleTerm()
 	if !exists('s:termbufnum')
@@ -40,22 +44,26 @@ function ToggleTerm()
 	endif
 endfunction
 
-function OpenTerm()
-	setlocal splitbelow
-	if has('nvim')
-		9sp | terminal
-	elseif has('terminal')
-		terminal ++close
-		res 9
+function! OpenTerm() abort
+	if has('nvim') || has('terminal')
+		setlocal splitbelow
+		if has('nvim')
+			9sp | terminal
+		else
+			terminal ++close
+			res 9
+		endif
+		setlocal number&
+		setlocal relativenumber&
+		setlocal nomodified&
+		if g:stt_auto_insert == 1
+			startinsert
+		endif
+		file stt-term
+		let s:termbufnum = bufnr("$")
+	else
+		echoerr "Vim has to be compiled with terminal support!"
 	endif
-	setlocal number&
-	setlocal relativenumber&
-	setlocal nomodified&
-	if g:stt_auto_insert == 1
-		startinsert
-	endif
-	file stt-term
-	let s:termbufnum = bufnr("$")
 endfunction
 
-command ToggleTerm call ToggleTerm()
+command! ToggleTerm call ToggleTerm()
