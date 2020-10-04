@@ -7,15 +7,24 @@ it more "IDE like".
 
 ## Commands
 
-You can toggle stt with the command
+You can toggle stt with the command:
 
 ```
 :ToggleTerm
 ```
 
+Or if you want to have multiple terminals you can execute `:ToggleTerm` with an
+argument:
+
+```
+:ToggleTerm term-1
+```
+
+And now `:ToggleTerm term-1` will only toggle term-1.
+
 ## Configuration
 
-The configurations only work in neovim, with vim they are ineffective.
+The configurations only works in neovim, with vim they are ineffective.
 
 You can enable `g:stt_auto_insert` to automatically enter insert mode when
 entering a terminal.
