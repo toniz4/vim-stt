@@ -1,7 +1,8 @@
 " stt.vim - Simple Togglable Terminal
 " Author: Cássio Ávila (AKA toniz4)
-" Version: 0.3
-" TODO: Hide terminal based on name
+" Version: 0.4
+" TODO: Better terminal resizing, make it possible to configure the size and
+" 		make it a fixed size when opening more then one terminal split
 " TODO: Better vim support
 
 if !exists('g:stt_auto_insert')
@@ -12,31 +13,41 @@ if !exists('g:stt_auto_quit')
 	let g:stt_auto_quit = 0
 endif
 
+if !exists('s:termbufnums')
+	let s:termbufnums = {}
+endif
+
 if !exists('auloaded')
 	let auloaded = 1
 	augroup stt
-		autocmd BufEnter stt-term if g:stt_auto_insert == 1 | startinsert | endif
+		autocmd BufEnter term:/* if g:stt_auto_insert == 1 | startinsert | endif
 		autocmd BufEnter * if (g:stt_auto_quit == 1 && winnr("$") == 1
-					\ && exists('s:termbufnum')
+					\ && exists('s:termbufnums')
 					\ && get(getwininfo(win_getid()),0).terminal) | q | endif
-		autocmd BufDelete stt-term unlet s:termbufnum
+		autocmd BufDelete term:/* unlet s:termbufnum
 	augroup END
 endif
 
-function ToggleTerm()
-	if !exists('s:termbufnum')
-		call OpenTerm()
+function ToggleTerm(name)
+	if a:name == ''
+		let l:termname = 'term:/terminal'
+	else
+		execute "let l:termname = " . "'term:/" . a:name . ".stt'"
+	endif
+
+	if !get(s:termbufnums, l:termname)
+		call OpenTerm(a:name)
 	else
 		for l:buf in getbufinfo({'buflisted':1})
 			let l:win = get(getwininfo(get(l:buf.windows, 0)), 0)
 
 			if !l:buf.hidden
-				if l:win.terminal
-					let s:termbufnum = l:buf.bufnr
+				if l:win.terminal && l:termname == buf.name
+					let s:termbufnums[l:termname] = l:buf.bufnr
 					execute l:win.winnr . 'hide'
 				endif
 			else
-				if s:termbufnum == l:buf.bufnr
+				if s:termbufnums[l:termname] == l:buf.bufnr
 					execute 'sbuffer' . l:buf.bufnr | res 9
 				endif
 			endif
@@ -44,7 +55,7 @@ function ToggleTerm()
 	endif
 endfunction
 
-function! OpenTerm() abort
+function! OpenTerm(name) abort
 	if has('nvim') || has('terminal')
 		setlocal splitbelow
 		if has('nvim')
@@ -59,11 +70,18 @@ function! OpenTerm() abort
 		if g:stt_auto_insert == 1
 			startinsert
 		endif
-		file stt-term
-		let s:termbufnum = bufnr("$")
+
+		if a:name == ''
+			let l:termname = 'term:/terminal'
+		else
+			execute "let l:termname = " . "'term:/" . a:name . ".stt'"
+		endif
+
+		execute "file! " . l:termname
+		let s:termbufnums[l:termname] = bufnr("$")
 	else
 		echoerr "Vim has to be compiled with terminal support!"
 	endif
 endfunction
 
-command! ToggleTerm call ToggleTerm()
+command! -nargs=? ToggleTerm call ToggleTerm('<args>')
