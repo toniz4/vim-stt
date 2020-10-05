@@ -13,9 +13,6 @@ if !exists('g:stt_auto_quit')
 	let g:stt_auto_quit = 0
 endif
 
-if !exists('s:termbufnums')
-	let s:termbufnums = {}
-endif
 
 if !exists('auloaded')
 	let auloaded = 1
@@ -24,7 +21,7 @@ if !exists('auloaded')
 		autocmd BufEnter * if (g:stt_auto_quit == 1 && winnr("$") == 1
 					\ && exists('s:termbufnums')
 					\ && get(getwininfo(win_getid()),0).terminal) | q | endif
-		autocmd BufDelete term:/* unlet s:termbufnum
+		autocmd BufDelete term:/* unlet s:termbufnums
 	augroup END
 endif
 
@@ -33,6 +30,10 @@ function ToggleTerm(name)
 		let l:termname = 'term:/terminal'
 	else
 		execute "let l:termname = " . "'term:/" . a:name . ".stt'"
+	endif
+
+	if !exists('s:termbufnums')
+		let s:termbufnums = {}
 	endif
 
 	if !get(s:termbufnums, l:termname)
