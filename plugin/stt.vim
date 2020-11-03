@@ -30,7 +30,6 @@ function CleanBuffer()
 endfunction
 
 function UpdateBuffer()
-	echo 'cuuuu'
 	let s:termbufnums[s:termname] = bufnr(s:termname)
 endfunction
 
