@@ -39,7 +39,7 @@ By enabling `g:stt_auto_quit` the terminal window will quit, when there is no ot
 let g:stt_auto_quit = 1
 ```
 
-### If have enchantments ideas or issues, feel free to open a issue/pr
+### If you have enchantments ideas or issues, feel free to open a issue/pr
 
 ### Vim has to be compiled with terminal support to (partially) work
 
